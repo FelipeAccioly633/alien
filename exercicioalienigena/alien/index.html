@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercício do Alien</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+  <style> body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } </style>
+</head>
+<body>
+  <script>
+    // Definição das dimensões do jogo
+    const larguraJogo = 700;
+    const alturaJogo = 850;
+    
+    // Configuração do jogo Phaser, incluindo física e cenas
+    const config = {
+      type: Phaser.AUTO,
+      width: larguraJogo,
+      height: alturaJogo,
+      physics: {
+        default: 'arcade',
+        arcade: {
+          gravity: { y: 300 }, // Configuração da gravidade no eixo Y
+          debug: true // Ativa a depuração da física
+        }
+      },
+      scene: {
+        preload: preload,
+        create: create,
+        update: update
+      }
+    };
+    
+    // Criação do jogo com a configuração definida
+    const game = new Phaser.Game(config);
+    
+    var alien;
+    var teclado;
+    var fogo;
+    var plataforma;
+    var moeda;
+    var pontuacao = 0;
+    var placar;
+
+    // Função de pré-carregamento dos assets do jogo
+    function preload() {
+      this.load.image('background', 'assets/bg.png');
+      this.load.image('player', 'assets/alienigena.png');
+      this.load.image('efeito', 'assets/turbo.png');
+      this.load.image('plataforma_tijolo', 'assets/tijolos.png');
+      this.load.image('moeda', 'assets/moeda.png');
+    }
+    
+    // Função de criação dos elementos do jogo
+    function create() {
+      // Adiciona o fundo do jogo
+      this.add.image(larguraJogo/2, alturaJogo/2, 'background');
+      
+      // Criação do efeito de turbo (inicialmente invisível)
+      fogo = this.add.sprite(0, 0, 'efeito');
+      fogo.setVisible(false);
+      
+      // Criação do jogador (alien) e configuração de colisões
+      alien = this.physics.add.sprite(larguraJogo/2, 0, 'player');
+      alien.setCollideWorldBounds(true);
+      alien.body.setSize(20, 40, true);
+      
+      // Configuração dos controles do teclado
+      teclado = this.input.keyboard.createCursorKeys();
+      
+      // Criação de uma plataforma estática e adição de colisão com o jogador
+      plataforma = this.physics.add.staticImage(larguraJogo/2, alturaJogo/2, 'plataforma_tijolo');
+      this.physics.add.collider(alien, plataforma);
+      
+      // Criação da moeda e suas configurações de física
+      moeda = this.physics.add.sprite(larguraJogo/2, 0, 'moeda');
+      moeda.setCollideWorldBounds(true);
+      moeda.setBounce(0.7); // Define um efeito de quicar na moeda
+      this.physics.add.collider(moeda, plataforma);
+      
+      // Adiciona o placar ao jogo
+      placar = this.add.text(50, 50, 'Moedas: ' + pontuacao, { fontSize: '45px', fill: '#495613' });
+      
+      // Configuração da coleta da moeda
+      this.physics.add.overlap(alien, moeda, function() {
+        moeda.setVisible(false);
+        var posicaoMoeda_Y = Phaser.Math.RND.between(50, 650); // Define uma nova posição aleatória para a moeda
+        moeda.setPosition(posicaoMoeda_Y, 100);
+        pontuacao += 1; // Incrementa a pontuação
+        placar.setText('Moedas: ' + pontuacao);
+        moeda.setVisible(true);
+      });    
+    }
+    
+    // Ativa o efeito de turbo
+    function ativarTurbo() {
+      fogo.setVisible(true);
+    }
+    
+    // Desativa o efeito de turbo
+    function semTurbo() {
+      fogo.setVisible(false);
+    }
+    
+    // Função de atualização contínua do jogo (movimentação e efeitos)
+    function update() {
+      // Movimento para a esquerda
+      if (teclado.left.isDown) {
+        alien.setVelocityX(-150);
+      }
+      // Movimento para a direita
+      else if (teclado.right.isDown) {
+        alien.setVelocityX(150);
+      }
+      // Sem movimento lateral
+      else {
+        alien.setVelocityX(0);
+      }
+      
+      // Movimento para cima (pulo) e ativação do turbo
+      if (teclado.up.isDown) {
+        alien.setVelocityY(-150);
+        ativarTurbo();
+      }
+      // Se não estiver pressionando a tecla para cima, desativa o turbo
+      else {
+        semTurbo();
+      }
+      
+      // Posiciona o efeito de turbo abaixo do jogador
+      fogo.setPosition(alien.x, alien.y + alien.height / 2);
+    }
+  </script>
+</body>
+</html>
